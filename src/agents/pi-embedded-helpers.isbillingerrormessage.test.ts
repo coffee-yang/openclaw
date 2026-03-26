@@ -557,6 +557,35 @@ describe("classifyFailoverReasonFromHttpStatus", () => {
       ),
     ).toBe("overloaded");
   });
+
+  it("treats generic HTTP 410 responses as retryable timeouts", () => {
+    expect(classifyFailoverReasonFromHttpStatus(410)).toBe("timeout");
+    expect(classifyFailoverReasonFromHttpStatus(410, "")).toBe("timeout");
+    expect(classifyFailoverReasonFromHttpStatus(410, "No body response")).toBe("timeout");
+  });
+
+  it("treats session-specific HTTP 410 responses as session_expired", () => {
+    expect(classifyFailoverReasonFromHttpStatus(410, "session not found")).toBe("session_expired");
+    expect(classifyFailoverReasonFromHttpStatus(410, "conversation expired")).toBe(
+      "session_expired",
+    );
+  });
+});
+
+describe("classifyFailoverReason", () => {
+  it("treats generic 410 text as retryable timeout", () => {
+    expect(classifyFailoverReason("410")).toBe("timeout");
+    expect(classifyFailoverReason("HTTP 410")).toBe("timeout");
+    expect(classifyFailoverReason("410 Gone")).toBe("timeout");
+    expect(classifyFailoverReason("410: No body")).toBe("timeout");
+    expect(classifyFailoverReason("HTTP 410: No body")).toBe("timeout");
+    expect(classifyFailoverReason("HTTP 410 Gone")).toBe("timeout");
+  });
+
+  it("keeps session-specific 410 text mapped to session_expired", () => {
+    expect(classifyFailoverReason("HTTP 410: session not found")).toBe("session_expired");
+    expect(classifyFailoverReason("410 conversation expired")).toBe("session_expired");
+  });
 });
 
 describe("isFailoverErrorMessage", () => {

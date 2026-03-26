@@ -482,6 +482,16 @@ export function classifyFailoverReasonFromHttpStatus(
   if (status === 408) {
     return "timeout";
   }
+  if (status === 410) {
+    // HTTP 410 is only a true session-expiry signal when the payload says the
+    // remote session/conversation is gone. Generic 410/no-body responses from
+    // OpenAI-compatible proxies are better treated as retryable transport-path
+    // failures so we do not clear session state or poison auth-profile health.
+    if (message && isCliSessionExpiredErrorMessage(message)) {
+      return "session_expired";
+    }
+    return "timeout";
+  }
   if (status === 503) {
     if (message && isOverloadedErrorMessage(message)) {
       return "overloaded";
@@ -931,6 +941,11 @@ export function classifyFailoverReason(raw: string): FailoverReason | null {
   if (isModelNotFoundErrorMessage(raw)) {
     return "model_not_found";
   }
+  const trimmed = raw.trim();
+  const leadingStatus = extractLeadingHttpStatus(trimmed);
+  if (leadingStatus?.code === 410) {
+    return classifyFailoverReasonFromHttpStatus(leadingStatus.code, leadingStatus.rest);
+  }
   const reasonFrom402Text = classifyFailoverReasonFrom402Text(raw);
   if (reasonFrom402Text) {
     return reasonFrom402Text;
@@ -946,7 +961,7 @@ export function classifyFailoverReason(raw: string): FailoverReason | null {
   }
   if (isTransientHttpError(raw)) {
     // 529 is always overloaded, even without explicit overload keywords in the body.
-    const status = extractLeadingHttpStatus(raw.trim());
+    const status = extractLeadingHttpStatus(trimmed);
     if (status?.code === 529) {
       return "overloaded";
     }
