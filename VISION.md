@@ -16,7 +16,7 @@ The goal: a personal assistant that is easy to use, supports a wide range of pla
 
 The current focus is:
 
-Priority:
+Priority: 发的发
 
 - Security and safe defaults
 - Bug fixes and stability
