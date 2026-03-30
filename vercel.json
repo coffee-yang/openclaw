@@ -1,0 +1,5 @@
+{
+  "buildCommand": "pnpm install && pnpm ui:build",
+  "outputDirectory": "dist/control-ui",
+  "installCommand": "pnpm install"
+}
