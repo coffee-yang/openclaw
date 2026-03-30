@@ -1,5 +1,5 @@
 {
-  "buildCommand": "pnpm install && pnpm ui:build",
-  "outputDirectory": "dist/control-ui",
-  "installCommand": "pnpm install"
+  "installCommand": "pnpm install --filter openclaw-control-ui",
+  "buildCommand": "pnpm --filter openclaw-control-ui run build",
+  "outputDirectory": "dist/control-ui"
 }
